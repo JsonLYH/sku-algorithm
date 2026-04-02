@@ -8,7 +8,7 @@ title: 商品多规格选择-sku算法
 
 相信大家看到这张图片就知道我们这篇文章要讲什么了，没错就是-商品多规格选择的解法。
 
-近来在掘金上面看见大家都在研究“商品多规格选择”的问题，例如`晨曦大佬`的[前端电商 sku 的全排列算法很难吗？学会这个套路，彻底掌握排列组合。](https://juejin.im/post/5ee6d9026fb9a047e60815f1) 在这篇文章里面，大佬写明了如何实现`sku`的全排列，思路非常的棒，但是并没有紧贴业务场景。真正的业务场景是，我们要根据用户每一次选择的规格，找出剩下可选的规格和不可选的规格，表现在前端页面上：就是将不可选的规格置灰，也就是如下效果（可以点击[这里](https://codesandbox.io/s/sku-algorithm-pionk?file=/src/redux/reducer/spec-reducer.ts)查看最终效果）：
+近来在掘金上面看见大家都在研究“商品多规格选择”的问题，例如`晨曦大佬`的[前端电商 sku 的全排列算法很难吗？学会这个套路，彻底掌握排列组合。](https://juejin.im/post/5ee6d9026fb9a047e60815f1) 在这篇文章里面，大佬写明了如何实现`sku`的全排列，思路非常的棒，但是并没有紧贴业务场景。真正的业务场景是，我们要根据用户每一次选择的规格，找出剩下可选的规格和不可选的规格，表现在前端页面上：就是将不可选的规格置灰，也就是如下效果:
 
 ![sku.gif](https://i.loli.net/2020/06/21/hdQRZwjpvknKNru.gif)
 
@@ -114,23 +114,23 @@ specCombinationList: [
 
 好了，无向图画好了，现在我们将它映射到`邻接矩阵`上面（这一步强烈建议小伙伴们拿出纸笔来一起画一画）：
 
-![顶点邻接矩阵.png](https://i.loli.net/2020/06/21/sz5d9k34wJnXmNM.png)
+![顶点邻接矩阵.png](https://ask.qcloudimg.com/http-save/1154520/rfp5xw1s44.png)
 
 到了这一步，恭喜你，你已经懂了一大半了 👏。
 
 好了，到这我们就可以公布最终结论了：
 
-- 当用户初次进入该页面时，所有的规格均可选：
+- 当用户初次进入该页面时，所有存在有 1 的情况的规格均可选
 
-![都可选.png](https://i.loli.net/2020/06/21/Jgy4dzTfwDEmMlR.png)
+![都可选.png](https://ask.qcloudimg.com/http-save/1154520/9angipf49u.png)
 
 - 当用户选择了某个顶点后，当前顶点所有可选项均被找出（即是当前顶点所在列值为 1 的顶点）：
 
-![选择一项.png](https://i.loli.net/2020/06/21/Gnkr3ZSwjcIRJqW.png)
+![选择一项.png](https://ask.qcloudimg.com/http-save/1154520/9angipf49u.png)
 
-- 选取多个顶点时，可选项是各个顶点邻接点的交集：（即是选中顶点所在列的交集）
+- 选取多个顶点时，可选项是各个顶点邻接点的交集(且运算)：（即是选中顶点所在列的交集）
 
-![多个顶点交集.png](https://i.loli.net/2020/06/21/xBTaGw9znPtVXED.png)
+![多个顶点交集.png](https://ask.qcloudimg.com/http-save/1154520/3wfeogxhzb.png)
 
 ## 代码实现
 
@@ -233,7 +233,8 @@ export default class AdjoinMatrix {
     const paramsColSum = this.getColSum(params);
     let unions: AdjoinType = [];
     paramsColSum.forEach((item, index) => {
-      if (item >= params.length && this.vertex[index]) unions.push(this.vertex[index]);
+      if (item >= params.length && this.vertex[index])
+        unions.push(this.vertex[index]);
     });
     return unions;
   }
@@ -249,14 +250,25 @@ export default class AdjoinMatrix {
 ```ts
 import AdjoinMatrix from "./adjoin-martix";
 import { AdjoinType } from "./adjoin-martix";
-import { SpecCategoryType, CommoditySpecsType } from "../redux/reducer/spec-reducer";
+import {
+  SpecCategoryType,
+  CommoditySpecsType,
+} from "../redux/reducer/spec-reducer";
 
 export default class SpecAdjoinMatrix extends AdjoinMatrix {
   specList: Array<CommoditySpecsType>;
   specCombinationList: Array<SpecCategoryType>;
 
-  constructor(specList: Array<CommoditySpecsType>, specCombinationList: Array<SpecCategoryType>) {
-    super(specList.reduce((total: AdjoinType, current) => [...total, ...current.list], []));
+  constructor(
+    specList: Array<CommoditySpecsType>,
+    specCombinationList: Array<SpecCategoryType>,
+  ) {
+    super(
+      specList.reduce(
+        (total: AdjoinType, current) => [...total, ...current.list],
+        [],
+      ),
+    );
     this.specList = specList;
     this.specCombinationList = specCombinationList;
     // 根据可选规格列表矩阵创建
@@ -328,16 +340,21 @@ import "./spec.css";
 const classNames = require("classnames");
 
 const Spec: React.FC = () => {
-  const { specList, specCombinationList } = useSelector((state: RootState) => state.spec);
+  const { specList, specCombinationList } = useSelector(
+    (state: RootState) => state.spec,
+  );
   // 已选择的规格，长度为规格列表的长度
   const [specsS, setSpecsS] = useState(Array(specList.length).fill(""));
 
   // 创建一个规格矩阵
-  const specAdjoinMatrix = useMemo(() => new SpecAdjoinMatrix(specList, specCombinationList), [specList, specCombinationList]);
+  const specAdjoinMatrix = useMemo(
+    () => new SpecAdjoinMatrix(specList, specCombinationList),
+    [specList, specCombinationList],
+  );
   // 获得可选项表
   const optionSpecs = specAdjoinMatrix.getSpecscOptions(specsS);
 
-  const handleClick = function(bool: boolean, text: string, index: number) {
+  const handleClick = function (bool: boolean, text: string, index: number) {
     // 排除可选规格里面没有的规格
     if (specsS[index] !== text && !bool) return;
     // 根据text判断是否已经被选中了
