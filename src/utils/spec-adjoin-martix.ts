@@ -3,7 +3,9 @@ import { AdjoinType } from "./adjoin-martix";
 import { SpecCategoryType, CommoditySpecsType } from "../redux/reducer/spec-reducer";
 
 export default class SpecAdjoinMatrix extends AdjoinMatrix {
+  // 规格类别列表
   specList: Array<CommoditySpecsType>;
+  // 可选规格组合列表
   specCombinationList: Array<SpecCategoryType>;
 
   constructor(specList: Array<CommoditySpecsType>, specCombinationList: Array<SpecCategoryType>) {

@@ -22,8 +22,10 @@ export default class AdjoinMatrix {
    *  传入一个顶点，和当前顶点可达的顶点数组，将对应位置置为1
    */
   setAdjoinVertexs(id: string, sides: AdjoinType) {
+    //当前顶点索引(纵向索引)
     const pIndex = this.vertex.indexOf(id);
     sides.forEach((item) => {
+      //横向索引
       const index = this.vertex.indexOf(item);
       this.adjoinArray[pIndex * this.quantity + index] = 1;
     });
